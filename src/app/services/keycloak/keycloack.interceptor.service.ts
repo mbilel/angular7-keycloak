@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
-import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent } from '@angular/common/http';
-import { Observable, from } from 'rxjs';
-import { mergeMap } from 'rxjs/operators';
+import { HttpInterceptor, HttpRequest, HttpHandler, HttpEvent, HttpResponse, HttpErrorResponse } from '@angular/common/http';
+import { Observable, from, throwError } from 'rxjs';
+import { mergeMap, map, catchError } from 'rxjs/operators';
 import { KeycloakService } from './keycloak.service';
 @Injectable()
 export class KeycloakInterceptorService implements HttpInterceptor {
@@ -22,7 +22,18 @@ export class KeycloakInterceptorService implements HttpInterceptor {
           return next.handle(request);
         }));
     }
-    return next.handle(request);
+    return next.handle(request).pipe(
+      catchError((error: HttpErrorResponse) => {
+        
+        //let data = {};
+        //data = {
+           // reason: error && error.error.reason ? error.error.reason : '',
+            // status: error.status
+        //};
+        if(error.status == 401){
+        this.keycloakService.login();        }
+        return throwError(error);
+    }));
   }
   getUserToken() {
     const tokenPromise: Promise<string> = this.keycloakService.getToken();
